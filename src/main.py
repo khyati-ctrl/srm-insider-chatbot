@@ -1,5 +1,6 @@
 """
 Interactive main entry point for the chatbot
+Simple, free, no AI models - just keyword matching!
 """
 
 import os
@@ -13,7 +14,8 @@ def main():
     """
     
     print("="*60)
-    print("Welcome to SRM Insider AI Bot")
+    print("Welcome to SRM Insider Chatbot")
+    print("(Free & Simple - No AI Models!)")
     print("="*60 + "\n")
     
     # Find PDF files
@@ -52,21 +54,17 @@ def main():
     try:
         bot = SRMInsiderBot(pdf_path)
         
-        # Load and process
+        # Load PDF
         if not bot.load_pdf():
             return
         
-        if not bot.process_documents():
-            return
+        print()  # Add space
         
         # Start interactive chat
         bot.interactive_chat()
         
-    except ValueError as e:
+    except Exception as e:
         print(f"❌ Error: {e}")
-        print("\nPlease ensure you have:")
-        print("1. Set OPENAI_API_KEY in your .env file")
-        print("2. Run 'pip install -r requirements.txt' to install dependencies")
 
 
 if __name__ == "__main__":
