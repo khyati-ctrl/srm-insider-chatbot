@@ -205,3 +205,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# Removed files (not part of final submission)
+docs/DEMO_VIDEO_GUIDE.md
+setup_git.sh
+src/create_sample_pdf.py
