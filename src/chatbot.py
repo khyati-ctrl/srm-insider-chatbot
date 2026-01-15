@@ -83,13 +83,13 @@ class SRMInsiderBot:
             print(f"Error loading file: {e}")
             return False
 
-    def find_relevant_text(self, question: str, num_results: int = 3) -> List[Tuple[str, int]]:
+    def find_relevant_text(self, question: str, num_results: int = 1) -> List[Tuple[str, int]]:
         """
         Find relevant text from the PDF that matches the question.
         
         Args:
             question: The question to ask
-            num_results: Number of relevant passages to return
+            num_results: Number of relevant passages to return (default: 1 for concise answers)
             
         Returns:
             List of (text, page_number) tuples
@@ -97,38 +97,81 @@ class SRMInsiderBot:
         if not self.pdf_text:
             return []
         
+        # Clean up the question first
+        question_clean = question.lower().rstrip('?').strip()
+        question_clean = ''.join(c for c in question_clean if c.isalnum() or c.isspace())
+        
         # Get keywords from the question (remove small words)
-        keywords = [word.lower() for word in question.split() 
-                   if len(word) > 2 and word.lower() not in ['the', 'and', 'for', 'are', 'what', 'who', 'when', 'where', 'why', 'how', 'did', 'was', 'is', 'of', 'in', 'to']]
+        stop_words = {'the', 'and', 'for', 'are', 'what', 'who', 'when', 'where', 'why', 'how', 'did', 'was', 'is', 'of', 'in', 'to', 'a', 'an', 'be', 'by', 'do', 'it', 'or', 'as'}
+        keywords = [word.lower() for word in question_clean.split() 
+                   if len(word) > 2 and word.lower() not in stop_words]
         
         if not keywords:
             return []
         
-        # Search in each page and score them
+        # Search in each section and score them
         results = []
         for page_num, page_text in enumerate(self.pages):
-            # Count keyword matches in this page
+            if not page_text.strip():
+                continue
+            
+            # Clean up the section text
+            clean_text = " ".join(page_text.split())
+            page_lower = clean_text.lower()
+            
             score = 0
-            for keyword in keywords:
-                score += page_text.lower().count(keyword)
+            
+            # Extract the section header (first line before any period/question mark)
+            section_header = clean_text.split('?')[0] if '?' in clean_text else clean_text.split('.')[0]
+            section_header = section_header.strip().lower()
+            # Remove special characters from header for matching
+            section_header_clean = ''.join(c for c in section_header if c.isalnum() or c.isspace())
+            
+            # Strategy 1: Check if user question and section header have similar patterns
+            # by comparing cleaned versions
+            if section_header_clean == question_clean:
+                # Perfect match - extremely high score!
+                score += 1000
+            else:
+                # Count how many keywords from user question appear in the section header
+                header_keyword_matches = sum(1 for kw in keywords if kw in section_header_clean)
+                
+                if header_keyword_matches >= len(keywords) - 1:  # Allow max 1 mismatch
+                    # Very high score if most keywords match in header
+                    score += 100 + (header_keyword_matches * 50)
+                elif header_keyword_matches > 0:
+                    # Still good score for partial header match
+                    score += 30 * header_keyword_matches
+                
+                # Strategy 2: Body keyword matching (less important than header)
+                for keyword in keywords:
+                    body_occurrences = page_lower.count(keyword)
+                    # Only count first few occurrences to avoid bias towards longer passages
+                    score += min(body_occurrences, 2) * 1
             
             if score > 0:
-                # Find the most relevant sentence/paragraph
-                sentences = page_text.split('.')
-                best_sentence = ""
-                best_score = 0
-                
-                for sentence in sentences:
-                    sent_score = sum(sentence.lower().count(keyword) for keyword in keywords)
-                    if sent_score > best_score:
-                        best_score = sent_score
-                        best_sentence = sentence.strip()
-                
-                if best_sentence:
-                    results.append((best_sentence, page_num + 1, score))
+                # Use the whole section if it's reasonably sized
+                if len(clean_text) < 1000:
+                    results.append((clean_text, page_num + 1, score))
+                else:
+                    # For longer sections, find the most relevant sentence
+                    sentences = clean_text.split('.')
+                    best_sentence = ""
+                    best_score = 0
+                    
+                    for sentence in sentences:
+                        sent_score = sum(sentence.lower().count(keyword) for keyword in keywords)
+                        if sent_score > best_score:
+                            best_score = sent_score
+                            best_sentence = sentence.strip()
+                    
+                    if best_sentence:
+                        results.append((best_sentence, page_num + 1, score))
         
         # Sort by score (relevance) and return top results
-        results.sort(key=lambda x: x[2], reverse=True)
+        if results:
+            results.sort(key=lambda x: x[2], reverse=True)
+        
         return [(text, page) for text, page, _ in results[:num_results]]
 
     def answer_question(self, question: str) -> dict:
@@ -147,8 +190,8 @@ class SRMInsiderBot:
                 "sources": []
             }
         
-        # Find relevant passages
-        relevant_texts = self.find_relevant_text(question, num_results=3)
+        # Find relevant passages (only 1 for concise answers)
+        relevant_texts = self.find_relevant_text(question, num_results=1)
         
         if not relevant_texts:
             return {
