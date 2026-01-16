@@ -1,35 +1,43 @@
-# SRM Insider AI Bot
+# SRM Insider Chatbot
 
-A beginner-friendly Python chatbot that reads PDF documents and answers questions about their content. Built specifically for the SRM Insider project.
+A simple, free, and beginner-friendly Python chatbot that reads PDF or text documents and answers questions using keyword matching. No AI models needed, completely free to use!
 
 ## 🚀 Features
 
-- **PDF Reading**: Automatically extracts and processes PDF documents
-- **Intelligent Q&A**: Uses OpenAI's GPT models to answer questions based on PDF content
-- **Vector Embeddings**: Utilizes FAISS for efficient document retrieval
+- **PDF & Text Support**: Reads both PDF files and plain text files
+- **Keyword-Based Matching**: Uses intelligent keyword matching to find relevant answers (no AI API calls needed)
 - **Interactive Chat**: Real-time conversation mode with source tracking
-- **Beginner-Friendly**: Clean, well-documented code with clear architecture
+- **Fast & Free**: No API keys required, runs entirely on your computer
+- **Simple Architecture**: Clean, easy-to-understand code with clear explanations
+- **Multiple Input Modes**: Interactive mode, demo mode, or test mode
 
 ## 📋 Project Structure
 
 ```
 srm-insider-chatbot/
 ├── src/
-│   ├── chatbot.py          # Main chatbot class
-│   ├── main.py             # Interactive entry point
-│   └── demo.py             # Demo with test questions
-├── pdfs/                   # PDF storage folder
-├── docs/                   # Documentation
-├── requirements.txt        # Python dependencies
-├── .env.example           # Environment variables template
-└── README.md              # This file
+│   ├── chatbot.py              # Main chatbot class (SRMInsiderBot)
+│   ├── main.py                 # Interactive entry point
+│   ├── demo.py                 # Automated demo with test questions
+│   ├── demo_text_chatbot.py    # Text file demo
+│   ├── test_interactive.py     # Interactive testing mode
+│   ├── pdf_to_text_converter.py # Convert PDF to text utility
+│   ├── create_sample_pdf.py    # Generate sample PDF for testing
+│   └── __pycache__/            # Python cache folder
+├── pdfs/                       # PDF/text file storage folder
+│   └── SRM_Content.txt         # Sample SRM Insider content
+├── docs/                       # Documentation folder
+├── requirements.txt            # Python dependencies
+├── setup_git.sh               # Git setup script
+├── QUICKSTART.md              # Quick start guide
+└── README.md                  # This file
 ```
 
 ## 🛠️ Installation
 
 ### Prerequisites
 - Python 3.8+
-- OpenAI API Key ([Get one here](https://platform.openai.com/api-keys))
+- No API keys or internet connection needed!
 
 ### Setup Steps
 
@@ -55,178 +63,197 @@ srm-insider-chatbot/
    pip install -r requirements.txt
    ```
 
-4. **Set up environment variables**
-   ```bash
-   # Copy the example file
-   cp .env.example .env
-   
-   # Edit .env and add your OpenAI API key
-   # OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
-   ```
-
-5. **Add your PDF**
-   - Place your SRM Insider PDF in the `pdfs/` folder
-   - Filename can be anything ending in `.pdf`
+4. **Add your content**
+   - Place your SRM Insider PDF or TXT file in the `pdfs/` folder
+   - The chatbot will automatically detect and use it
 
 ## 💻 Usage
 
 ### Interactive Mode
+Start a conversation with the chatbot:
 ```bash
 cd src
 python main.py
 ```
+Then type your questions. Type `quit` or `exit` to end the conversation.
 
-Then type your questions about the PDF content. Type `quit` or `exit` to end.
-
-### Run Demo with Test Cases
+### Run Demo with Test Questions
+Test the chatbot with 5 predefined questions:
 ```bash
 cd src
 python demo.py
 ```
 
-This will test the chatbot with the 5 required questions:
+### Interactive Text Demo
+Test with more sample questions:
+```bash
+cd src
+python demo_text_chatbot.py
+```
+
+### Interactive Testing Mode
+Another interactive mode for testing:
+```bash
+cd src
+python test_interactive.py
+```
+
+## 📊 How It Works
+
+The chatbot uses a **keyword matching algorithm**:
+
+```
+1. User asks a question
+   ↓
+2. Extract keywords from the question
+   (remove small words like "the", "and", "what")
+   ↓
+3. Search through PDF/text content
+   for sections containing those keywords
+   ↓
+4. Score each section based on:
+   - Keyword matches in section headers (highest score)
+   - Keyword matches in body text (lower score)
+   - Exact phrase matching
+   ↓
+5. Return the highest-scoring section as the answer
+   along with source page number
+   ↓
+6. Display answer to user
+```
+
+## 🔧 Core Components
+
+### 1. **chatbot.py** - Main Chatbot Engine
+The `SRMInsiderBot` class handles everything:
+
+- `__init__()`: Initialize the chatbot with a PDF/text file path
+- `load_pdf()`: Load and extract text from PDF or TXT files
+- `find_relevant_text()`: Search for text matching user's question
+- `answer_question()`: Generate an answer with source information
+- `interactive_chat()`: Run an interactive conversation
+
+**Key Features:**
+- Supports both PDF and TXT files
+- Splits content into pages/sections
+- Scores sections by relevance
+- Returns top matching result with page number
+
+### 2. **main.py** - Interactive Entry Point
+Starts the chatbot in interactive mode:
+- Finds available PDF/TXT files in the `pdfs/` folder
+- Lets user choose which file to load (if multiple exist)
+- Starts interactive chat session
+
+### 3. **demo.py** - Automated Testing
+Tests chatbot with 5 required questions:
 1. What is SRM INSIDER?
 2. When did it start?
 3. Who is the founder of SRM INSIDER?
 4. What are the domains of SRM INSIDER?
 5. What is SRM Roomie?
 
-## 📊 How It Works
+### 4. **demo_text_chatbot.py** - Text Demo
+Demonstrates chatbot with 7 sample questions about SRM Insider.
 
+### 5. **test_interactive.py** - Interactive Test Mode
+Another interactive mode for testing the chatbot.
+
+### 6. **pdf_to_text_converter.py** - Utility Tool
+Converts PDF files to plain text for easier processing.
+
+### 7. **create_sample_pdf.py** - Sample Generator
+Creates a sample PDF with SRM Insider information for testing.
+
+## 📝 How the Algorithm Works
+
+### Keyword Extraction
+```python
+# Question: "What is SRM Insider?"
+# Extracted keywords: ["srm", "insider"]
+# (removed: "what", "is")
 ```
-PDF File
-   ↓
-[Load PDF] → PyPDFLoader reads document
-   ↓
-[Split Text] → RecursiveCharacterTextSplitter chunks document
-   ↓
-[Create Embeddings] → OpenAIEmbeddings converts chunks to vectors
-   ↓
-[Store Vectors] → FAISS stores embeddings for fast retrieval
-   ↓
-[User Question] → Input is converted to embedding
-   ↓
-[Retrieve Context] → FAISS finds most relevant chunks
-   ↓
-[Generate Answer] → GPT-3.5-turbo generates response using context
-   ↓
-[Return Answer] → Display result with source information
-```
 
-## 🔧 Code Structure
+### Scoring System
+- **Perfect header match**: 1000 points
+- **Most keywords in header**: 100-150 points
+- **Some keywords in header**: 30-50 points
+- **Keywords in body text**: 1-2 points each
 
-### `chatbot.py` - Main Class
-The `SRMInsiderBot` class handles:
-- **`__init__`**: Initialize with API key and PDF path
-- **`load_pdf()`**: Load PDF file using PyPDFLoader
-- **`process_documents()`**: Split documents, create embeddings, and initialize Q&A chain
-- **`answer_question()`**: Answer a single question
-- **`interactive_chat()`**: Start interactive conversation mode
+### Result Selection
+- Scores all content sections
+- Returns section with highest score
+- If no match found, says "couldn't find relevant information"
 
-### `main.py` - Entry Point
-- User-friendly interface
-- PDF selection (if multiple files exist)
-- Launches interactive chat mode
+## 🎯 Example Usage
 
-### `demo.py` - Testing
-- Loads first PDF automatically
-- Tests 5 required questions
-- Displays answers with source page numbers
-
-## 📝 Dependencies
-
-| Package | Purpose |
-|---------|---------|
-| `langchain` | LLM orchestration framework |
-| `openai` | OpenAI API client |
-| `python-dotenv` | Environment variable management |
-| `PyPDF2` | PDF reading |
-| `faiss-cpu` | Vector similarity search |
-
-## ⚠️ Important Notes
-
-- **API Costs**: Using this chatbot will consume OpenAI API credits. Monitor your usage on the [OpenAI dashboard](https://platform.openai.com/account/billing/overview).
-- **API Key Security**: Never commit your `.env` file to Git. It's already in `.gitignore`.
-- **PDF Quality**: Works best with text-based PDFs. Scanned images may not work well.
-
-## 🎯 Test Cases
-
-The chatbot is designed to answer these 5 specific questions:
-
-1. **"What is SRM INSIDER?"** - Should explain the organization
-2. **"When did it start?"** - Should provide founding date
-3. **"Who is the founder of SRM INSIDER?"** - Should identify founder(s)
-4. **"What are the domains of SRM INSIDER?"** - Should list domains/areas
-5. **"What is SRM Roomie?"** - Should explain SRM Roomie service/product
-
-## 🐛 Troubleshooting
-
-### "OPENAI_API_KEY not found"
-- Ensure `.env` file exists in the project root
-- Verify OPENAI_API_KEY is set correctly
-- Check there are no extra spaces in the key
-
-### "No PDF files found"
-- Create a `pdfs/` folder if it doesn't exist
-- Add your PDF file to the folder
-- Ensure file has `.pdf` extension
-
-### "ModuleNotFoundError"
 ```bash
-# Reinstall dependencies
-pip install -r requirements.txt
+$ python main.py
+==============================================================
+Welcome to SRM Insider Chatbot
+(Free & Simple - No AI Models!)
+==============================================================
+
+Loading text file: ../pdfs/SRM_Content.txt
+✓ Loaded 5 sections from text file
+✓ Total text length: 2500 characters
+
+============================================================
+SRM Insider Chatbot - Interactive Mode
+============================================================
+Type 'quit' or 'exit' to end the conversation
+
+You: What is SRM Insider?
+Bot: SRM Insider is a premier community platform...
+Source pages: 1
+
+You: Who founded it?
+Bot: SRM Insider was founded by a group of visionary students...
+Source pages: 1
+
+You: quit
+Bot: Goodbye! Thank you for using SRM Insider Chatbot.
 ```
 
-## 📈 Performance Tips
+## 🔑 Key Technologies
 
-- **Chunk Size**: Adjust in `chatbot.py` (default: 500 characters)
-- **Retrieval Count**: Change `search_kwargs={"k": 3}` to retrieve more/fewer context chunks
-- **Temperature**: Adjust in `ChatOpenAI()` for more/less creative responses
-  - Lower (0.0-0.3): More factual and consistent
-  - Higher (0.7-1.0): More creative and varied
+- **PyPDF2**: PDF text extraction
+- **Python 3.8+**: Programming language
+- **Standard Library**: File I/O, string processing
 
-## 🚀 Future Enhancements
+## ✨ Why This Chatbot is Special
 
-- [ ] Support for multiple PDFs
-- [ ] Document caching to reduce API calls
-- [ ] Web interface with Streamlit
-- [ ] Chat history logging
-- [ ] Support for other LLM providers (Hugging Face, Cohere, etc.)
-- [ ] Streaming responses for faster user experience
+1. **Free Forever**: No API costs, no subscriptions
+2. **No Internet Needed**: Works completely offline
+3. **Privacy**: Your data never leaves your computer
+4. **Simple**: Easy to understand and modify
+5. **Fast**: Instant responses without waiting for AI
+6. **Beginner-Friendly**: Well-commented code with clear logic
 
-## 📜 License
+## 📖 Code Explanation
 
-This project is created for the SRM Insider AI Bot task.
+Each line of code has been written with simplicity in mind:
+- Clear variable names
+- Detailed comments
+- Logical structure
+- Type hints for clarity
 
-## ❓ Need Help?
+For a detailed line-by-line explanation of the code, see the documentation or ask for specific file explanations.
 
-Refer to the documentation in the `docs/` folder for:
-- Architecture flowchart
-- API integration guide
-- FAQ
+## 🚀 Getting Started
 
----
+1. Place your PDF or TXT file in the `pdfs/` folder
+2. Run `python main.py` from the `src/` folder
+3. Start asking questions!
+4. Type `quit` to exit
 
-**Deadline**: January 18, 2026
+## 📞 Support
 
-**Built with ❤️ using LangChain and OpenAI**
-The bot reads a PDF document containing information about SRM Insider and answers user questions based only on that document.
+For issues or questions:
+1. Check the QUICKSTART.md file
+2. Review the code comments in the src/ folder
+3. Test with the demo.py file first
 
-## Features
-- Reads and processes a PDF file
-- Searches relevant content from the document
-- Answers questions using AI
-- Command-line interface
+## 📄 License
 
-## Tech Stack
-- Python
-- PyPDF2
-- Sentence Transformers
-- FAISS
-- HuggingFace Transformers
-
-## How It Works
-PDF → Text Extraction → Text Chunking → Vector Search → AI Answer
-
-## How to Run
-Instructions will be added after setup.
+This project is open source and free to use!
